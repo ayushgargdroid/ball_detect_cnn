@@ -4,4 +4,8 @@ encoding-check/
 RAW/
 test/
 old_models/
+index.sh
+left.jpg
+right.jpg
+models.txt
 
