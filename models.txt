@@ -1,0 +1,14 @@
+1 - first without much dataset
+2 - with recorded videos and previous dataset
+3 - second with recorded videos and previous dataset
+8 - updated dataset with 2 layers and 4 convolutional layers epoch 50
+9 - dataset with 2 layers and 5 convolutional layers last with 64 epoch 3 units 92%
+10 - updated dataset with 2 layers and 5 convolutional layers last with 128 epoch 3 units 90%
+11 - dataset with 3 layers and 5 convolutional layers last with 64 epoch 3 units 93.25% BEST
+12 - dataset with 4 layers and 5 convolutional layers last with 64 epoch 3 units 93.25%
+13 - dataset with 3 layers and 5 convolutional layers last with 64 epoch 3 units with dropout 0,0.6,0.3 92.13%
+14 - updated dataset with 3 layers and 5 convolutional layers last with 64 epoch 3 units 
+15 - dataset 2 Conv2D32 | 2 Conv2D64 | 3 Conv2D128 | 512 Dense 2 | Sigmoid epoch-3 
+17 - dataset 2 Conv2D64 | 2 Conv2D64 | 3 Conv2D32 | 256 Dense 3 | Sigmoid epoch-30 91.3%
+18 - dataset 2 Conv2D32 | 2 Conv2D64 | 3 Conv2D64 | 256 Dense 3 | Sigmoid epoch-10 93.46%
+ 
