@@ -3,7 +3,7 @@ import numpy as np
 
 images = open('/home/ayush/ball_detect_cnn/test/TOC.txt','r')
 images = [i.strip() for i in images]
-pic_num = 163
+pic_num = 336
 for i in images:
     print pic_num
     img = cv2.imread("/home/ayush/ball_detect_cnn/test/"+i, cv2.IMREAD_COLOR)
