@@ -5,7 +5,7 @@ from keras.layers import MaxPooling2D
 from keras.layers import Dense
 from keras.layers import Dropout
 from keras.layers import Flatten
-classifier=load_model('/home/pi/ball_detect_snn/my_model11.h5')
+classifier=load_model('/home/ayush/ball_detect_cnn/my_model11.h5')
 from keras.preprocessing import image
 import numpy as np
 import cv2
