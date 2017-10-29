@@ -13,6 +13,7 @@ cap = cv2.VideoCapture(0)
 while True:
     _, frame = cap.read()
     if(_):
+        print(frame.shape)
         frame = cv2.resize(frame,(256,128))
         left_frame = np.split(frame,2,axis=1)[0]
         right_frame = np.split(frame,2,axis=1)[1]

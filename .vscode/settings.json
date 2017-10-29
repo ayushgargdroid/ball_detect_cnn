@@ -3,5 +3,6 @@
         "${env.SPARK_HOME}/python",
         "${env.SPARK_HOME}/python/pyspark"
     ],
-    "python.pythonPath": "/home/ayush/.virtualenvs/cv/bin/python"
+    "python.pythonPath": "/home/ayush/.virtualenvs/cv/bin/python",
+    "python.linting.pylintEnabled": false
 }
