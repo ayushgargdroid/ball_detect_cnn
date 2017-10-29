@@ -36,7 +36,6 @@ class DataThread(threading.Thread):
         getData(self.sub,self.positive)
         
 def getData(dataset_name,sub,positive):
-    global x_train1, y_train1, x_test, y_test,x_train2
     path = '/home/ayush/ball_detect_cnn/'+dataset_name+'/'+sub
     if(sub=='training_set'):
         sub2 = os.listdir(path)
