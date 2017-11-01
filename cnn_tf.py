@@ -6,7 +6,10 @@ import cv2
 
 #Load dataset
 dataset_name = 'dataset'
-os.chdir('/home/ayush/ball_detect_cnn/'+dataset_name)
+if(os.name=='posix'):
+    os.chdir('/home/ayush/ball_detect_cnn/'+dataset_name)
+else:
+    os.chdir('C:\\Users\\Ayush\\')
 sub1 = os.listdir(os.curdir)
 x_train = np.uint8([])
 y_train = np.uint8([])
@@ -147,6 +150,69 @@ def getData(dataset_name,sub,positive):
         y_test.shape = (y_test.shape[0],1)
         np.save('x3',x_test)
         np.save('y3',y_test)
+        
+def getDataWindows(dataset_name,sub,positive):
+    path = 'C:\\Users\\Ayush\\'+dataset_name+'\\'+sub
+    x_train = np.uint8([])
+    y_train = np.uint8([])
+    x_test = np.uint8([])
+    y_test = np.uint8([])
+    count=0
+    if(sub=='training_set'):
+        sub2 = os.listdir(path)
+        for inn in sub2:
+            if(positive==1 and inn=='noball'):
+                continue
+            elif(positive==0 and inn=='ball'):
+                continue
+            path = '/home/ayush/ball_detect_cnn/'+dataset_name+'/'+sub+'/'+inn
+            imgs = os.listdir(path)
+            for i in imgs:
+                print('train '+i)
+                if(i.find('jpg')==-1):
+                    continue
+                if(i.find('no')==-1):
+                    y_train = np.append(y_train,1)
+                else:
+                    y_train = np.append(y_train,0)
+                img = cv2.imread(path+'/'+i,cv2.IMREAD_COLOR)
+                if(len(x_train.shape) is 1):
+                    x_train = np.uint8([img])
+                else:
+                    x_train = np.append(x_train,[img],axis=0)
+                count+=1
+                print(count)
+                print(x_train.shape)
+        y_train.shape = (y_train.shape[0],1)
+        if(positive==1):
+            np.save('x1',x_train)
+            np.save('y1',y_train)
+        else:
+            np.save('x2',x_train)
+            np.save('y2',y_train)
+    
+    elif(sub=='test_set'):
+        path = '/home/ayush/ball_detect_cnn/'+dataset_name+'/'+sub
+        sub2 = os.listdir(path)
+        for inn in sub2:
+            path = '/home/ayush/ball_detect_cnn/'+dataset_name+'/'+sub+'/'+inn
+            imgs = os.listdir(path)
+            for i in imgs:
+                print('test '+i)
+                if(i.find('jpg')==-1):
+                    continue
+                if(i.find('no')==-1):
+                    y_test = np.append(y_test,1)
+                else:
+                    y_test = np.append(y_test,0)
+                img = cv2.imread(path+'/'+i,cv2.IMREAD_COLOR)
+                if(len(x_test.shape) is 1):
+                    x_test = np.uint8([img])
+                else:
+                    x_test = np.append(x_test,[img],axis=0)
+        y_test.shape = (y_test.shape[0],1)
+        np.save('x3',x_test)
+        np.save('y3',y_test)
 
 
 #Shuffle Data        
@@ -197,9 +263,14 @@ def trainNN(X,Y):
     X_f = tf.nn.sigmoid(X_ft)
     return X_f
 
-train1_process = mp.Process(target=getData,args=(dataset_name,'training_set',1))
-train2_process = mp.Process(target=getData,args=(dataset_name,'training_set',0))
-test_process = mp.Process(target=getData,args=(dataset_name,'test_set',2))
+if(os.name=='posix'):
+    train1_process = mp.Process(target=getData,args=(dataset_name,'training_set',1))
+    train2_process = mp.Process(target=getData,args=(dataset_name,'training_set',0))
+    test_process = mp.Process(target=getData,args=(dataset_name,'test_set',2))
+else:
+    train1_process = mp.Process(target=getDataWindows,args=(dataset_name,'training_set',1))
+    train2_process = mp.Process(target=getDataWindows,args=(dataset_name,'training_set',0))
+    test_process = mp.Process(target=getDataWindows,args=(dataset_name,'test_set',2))
 
 train1_process.start()
 train2_process.start()
@@ -261,6 +332,7 @@ with tf.Session() as sess:
             _ , minibatch_cost = sess.run([optimizer, cost], feed_dict={X: miniX, Y: miniY})
             print(minibatch_cost)
             epoch_cost += minibatch_cost/batches
+            del miniX,miniY
         print('Cost after epoch %i is %f' % (epoch+1,epoch_cost))
 
 
