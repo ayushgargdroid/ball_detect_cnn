@@ -3,10 +3,9 @@ import numpy as np
 import os
 import tensorflow as tf
 import cv2
-from tensorflow.python.framework import ops
 
 #Load dataset
-dataset_name = 'dataset5'
+dataset_name = 'dataset'
 os.chdir('/home/ayush/ball_detect_cnn/'+dataset_name)
 sub1 = os.listdir(os.curdir)
 x_train = np.uint8([])
@@ -117,6 +116,7 @@ def getData(dataset_name,sub,positive):
                     x_train = np.append(x_train,[img],axis=0)
                 count+=1
                 print(count)
+                print(x_train.shape)
         y_train.shape = (y_train.shape[0],1)
         if(positive==1):
             np.save('x1',x_train)
@@ -171,6 +171,32 @@ def getWeights(a,b,i):
     c = tf.get_variable('b'+str(i),[b,1],initializer=tf.zeros_initializer())
     return W,c
 
+def trainNN(X,Y):
+    print('Training started...')
+    W1,b1 = getWeight([5,5,3,32]),getBias([32])
+    print('Received Weights 1...')
+    conv1 = tf.nn.relu(tf.nn.conv2d(X,W1,strides=[1, 1, 1, 1], padding='SAME')+b1)
+    print('Computed Conv 1...')
+    pool1 = tf.nn.max_pool(conv1,ksize=[1,2,2,1],strides=[1,2,2,1],padding='SAME')
+    print('Computed Pool 1...')
+    W2,b2 = getWeight([5,5,32,64]),getBias([64])
+    print('Received Weights 2...')
+    conv2 = tf.nn.relu(tf.nn.conv2d(pool1,W2,strides=[1, 1, 1, 1], padding='SAME')+b2)
+    print('Computed Conv 2...')
+    pool2 = tf.nn.max_pool(conv2,ksize=[1,2,2,1],strides=[1,2,2,1],padding='SAME')
+    print('Computed Pool 2...')
+    layer_shape = pool2.get_shape()
+    num_feat = layer_shape[1:4].num_elements()
+    X_t = tf.reshape(pool2,[-1,num_feat])
+    print('Flattened...')
+    W3,b3 = getWeight([num_feat,128]),getBias([128])
+    X_tt = tf.nn.relu(tf.add(tf.matmul(X_t,W3),b3))
+    print('Computed Dense 1...')
+    W4,b4 = getWeight([128,1]),getBias([1])
+    X_ft = tf.matmul(X_tt,W4)+b4
+    X_f = tf.nn.sigmoid(X_ft)
+    return X_f
+
 train1_process = mp.Process(target=getData,args=(dataset_name,'training_set',1))
 train2_process = mp.Process(target=getData,args=(dataset_name,'training_set',0))
 test_process = mp.Process(target=getData,args=(dataset_name,'test_set',2))
@@ -209,39 +235,33 @@ print('X_test: ',x_test.shape)
 print('Y_test: ',y_test.shape)
 
 minibatch_size = 32
-epochs = 5
 m = x_train.shape[0]
 dimen = x_train.shape[1:]
 #batches = m/minibatch_size
 batches = 5
 
-X = tf.placeholder(tf.float32,shape=x_train.shape,name='X')
-Y = tf.placeholder(tf.float32,shape=(m,1),name='Y')
+with tf.Session() as sess:
 
-for i in range(batches):
-    W1,b1 = getWeight([5,5,1,32]),getBias([32])
-    conv = tf.nn.relu(tf.nn.conv2d(X,W1)+b1)
-    pool = tf.nn.max_pool(conv,ksize=[1,2,2,1],strides=[1,2,2,1],padding='same')
-    W2,b2 = getWeight([5,5,32,64]),getBias([64])
-    conv = tf.nn.relu(tf.nn.conv2d(pool,W2)+b2)
-    pool = tf.nn.max_pool(conv,ksize=[1,2,2,1],strides=[1,2,2,1],padding='same')
-    X = tf.reshape(pool,[-1,dimen[0]*dimen[1]*dimen[2]])
-    W3,b3 = getWeight([dimen[0]*dimen[1]*dimen[2],256]),getBias([256])
-    X = tf.nn.relu(tf.matmul(X,W3)+b3)
-    W4,b4 = getWeight([256,1]),getBias([1])
-    X = tf.matmul(X,W3)+b3
+    X = tf.placeholder(tf.float32,shape=[minibatch_size,dimen[0],dimen[1],dimen[2]],name='X')
+    Y = tf.placeholder(tf.float32,shape=[minibatch_size,1],name='Y')
     
-cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits = tf.transpose(X), labels = tf.transpose(Y))
-optimizer = tf.train.GradientDescentOptimizer(learning_rate = 0.0001).minimize(cost)
-epochs = 10
-sess = tf.Session()
-for epoch in range(epochs):
-    epoch_cost = 0
-    for i in range(batch):
-        (miniX,miniY) = x_train[i*32:(i+1)*32],y_train[i*32:(i+1)*32]
-        _ , minibatch_cost = sess.run([optimizer, cost], feed_dict={X: miniX, Y: miniY})
-        epoch_cost += minibatch_cost/batch
-    print('Cost after epoch %i is %f' % (epoch+1,epoch_cost))
+    Z_f = trainNN(X,Y)
+        
+    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits = tf.transpose(Z_f), labels = tf.transpose(Y)))
+    optimizer = tf.train.GradientDescentOptimizer(learning_rate = 0.0001).minimize(cost)
+    init = tf.global_variables_initializer()
+    sess.run(init)
+    epochs = 2
+    for epoch in range(epochs):
+        epoch_cost = 0
+        for i in range(batches):
+            print(i)
+            (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
+            print(miniX.shape)
+            _ , minibatch_cost = sess.run([optimizer, cost], feed_dict={X: miniX, Y: miniY})
+            print(minibatch_cost)
+            epoch_cost += minibatch_cost/batches
+        print('Cost after epoch %i is %f' % (epoch+1,epoch_cost))
 
 
     
