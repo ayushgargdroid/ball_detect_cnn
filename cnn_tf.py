@@ -242,6 +242,7 @@ def trainNN(X,Y):
     W1,b1 = getWeight([5,5,3,32]),getBias([32])
     print('Received Weights 1...')
     conv1 = tf.nn.relu(tf.nn.conv2d(X,W1,strides=[1, 1, 1, 1], padding='SAME')+b1)
+    print(W1)
     print('Computed Conv 1...')
     pool1 = tf.nn.max_pool(conv1,ksize=[1,2,2,1],strides=[1,2,2,1],padding='SAME')
     print('Computed Pool 1...')
@@ -308,7 +309,7 @@ print('Y_test: ',y_test.shape)
 minibatch_size = 32
 m = x_train.shape[0]
 dimen = x_train.shape[1:]
-#batches = m/minibatch_size
+batches = m/minibatch_size
 batches = 5
 
 with tf.Session() as sess:
