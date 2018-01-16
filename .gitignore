@@ -4,6 +4,7 @@ dataset3/
 dataset4/
 dataset5/
 encoding-check/
+labelled_dataset1/
 full-size/
 RAW/
 test/
@@ -12,4 +13,10 @@ index.sh
 left.jpg
 right.jpg
 models.txt
-
+y.npy
+y_test.npy
+names.npy
+names_test.npy
+links.txt
+my_model11.h5
+new_model5.h5

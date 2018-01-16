@@ -5,20 +5,20 @@ import tensorflow as tf
 import cv2
 
 #Load dataset
-dataset_name = 'dataset'
+dataset_name = 'labelled_dataset1'
 if(os.name=='posix'):
     os.chdir('/home/ayush/ball_detect_cnn/'+dataset_name)
 else:
     os.chdir('C:\\Users\\Ayush\\')
-sub1 = os.listdir(os.curdir)
-x_train = np.uint8([])
-y_train = np.uint8([])
-x_train1 = np.uint8([])
-y_train1 = np.uint8([])
-x_train2 = np.uint8([])
-y_train2 = np.uint8([])
-x_test = np.uint8([])
-y_test = np.uint8([])
+# sub1 = os.listdir(os.curdir)
+# x_train = np.uint8([])
+# y_train = np.uint8([])
+# x_train1 = np.uint8([])
+# y_train1 = np.uint8([])
+# x_train2 = np.uint8([])
+# y_train2 = np.uint8([])
+# x_test = np.uint8([])
+# y_test = np.uint8([])
         
 def getDataFlatten(dataset_name,sub,positive):
     path = '/home/ayush/ball_detect_cnn/'+dataset_name+'/'+sub
@@ -259,47 +259,56 @@ def trainNN(X,Y):
     W3,b3 = getWeight([num_feat,128]),getBias([128])
     X_tt = tf.nn.relu(tf.add(tf.matmul(X_t,W3),b3))
     print('Computed Dense 1...')
-    W4,b4 = getWeight([128,1]),getBias([1])
+    W4,b4 = getWeight([128,64]),getBias([64])
     X_ft = tf.matmul(X_tt,W4)+b4
     X_f = tf.nn.sigmoid(X_ft)
-    return X_f
+    print('Computed Dense 2...')
+    W5,b5 = getWeight([64,5]),getBias([5])
+    X_ft = tf.matmul(X_f,W5)+b5
+    # X_f = tf.nn.sigmoid(X_ft)
+    return X_ft
 
-if(os.name=='posix'):
-    train1_process = mp.Process(target=getData,args=(dataset_name,'training_set',1))
-    train2_process = mp.Process(target=getData,args=(dataset_name,'training_set',0))
-    test_process = mp.Process(target=getData,args=(dataset_name,'test_set',2))
-else:
-    train1_process = mp.Process(target=getDataWindows,args=(dataset_name,'training_set',1))
-    train2_process = mp.Process(target=getDataWindows,args=(dataset_name,'training_set',0))
-    test_process = mp.Process(target=getDataWindows,args=(dataset_name,'test_set',2))
+# if(os.name=='posix'):
+#     train1_process = mp.Process(target=getData,args=(dataset_name,'training_set',1))
+#     train2_process = mp.Process(target=getData,args=(dataset_name,'training_set',0))
+#     test_process = mp.Process(target=getData,args=(dataset_name,'test_set',2))
+# else:
+#     train1_process = mp.Process(target=getDataWindows,args=(dataset_name,'training_set',1))
+#     train2_process = mp.Process(target=getDataWindows,args=(dataset_name,'training_set',0))
+#     test_process = mp.Process(target=getDataWindows,args=(dataset_name,'test_set',2))
 
-train1_process.start()
-train2_process.start()
-test_process.start()
-train1_process.join()
-train2_process.join()
-test_process.join()
+# train1_process.start()
+# train2_process.start()
+# test_process.start()
+# train1_process.join()
+# train2_process.join()
+# test_process.join()
 
-x_train1 = np.load('x1.npy')
-y_train1 = np.load('y1.npy')
-x_train2 = np.load('x2.npy')
-y_train2 = np.load('y2.npy')
-x_test = np.load('x3.npy')
-y_test = np.load('y3.npy')
+# x_train1 = np.load('x1.npy')
+# y_train1 = np.load('y1.npy')
+# x_train2 = np.load('x2.npy')
+# y_train2 = np.load('y2.npy')
+# x_test = np.load('x3.npy')
+# y_test = np.load('y3.npy')
 
-np.save('x1',x_train1)
-np.save('y1',y_train1)
-np.save('x2',x_train2)
-np.save('y2',y_train2)
-np.save('x3',x_test)
-np.save('y3',y_test)
+# np.save('x1',x_train1)
+# np.save('y1',y_train1)
+# np.save('x2',x_train2)
+# np.save('y2',y_train2)
+# np.save('x3',x_test)
+# np.save('y3',y_test)
 
-x_train = np.append(x_train1,x_train2,axis=0)
-y_train = np.append(y_train1,y_train2,axis=0)
-del x_train1,x_train2,y_train1,y_train2
+# x_train = np.append(x_train1,x_train2,axis=0)
+# y_train = np.append(y_train1,y_train2,axis=0)
+# del x_train1,x_train2,y_train1,y_train2
 
-x_train,y_train = getShuffled(x_train,y_train)
-x_test,y_test = getShuffled(x_test,y_test)
+# x_train,y_train = getShuffled(x_train,y_train)
+# x_test,y_test = getShuffled(x_test,y_test)
+
+x_train = np.load('x_train.npy')
+y_train = np.load('y_train.npy')
+x_test = np.load('x_test.npy')
+y_test = np.load('y_test.npy')
 
 print('X_train: ',x_train.shape)
 print('Y_train: ',y_train.shape)
@@ -315,7 +324,7 @@ batches = 5
 with tf.Session() as sess:
 
     X = tf.placeholder(tf.float32,shape=[minibatch_size,dimen[0],dimen[1],dimen[2]],name='X')
-    Y = tf.placeholder(tf.float32,shape=[minibatch_size,1],name='Y')
+    Y = tf.placeholder(tf.float32,shape=[minibatch_size,5],name='Y')
     
     Z_f = trainNN(X,Y)
         
@@ -323,7 +332,7 @@ with tf.Session() as sess:
     optimizer = tf.train.GradientDescentOptimizer(learning_rate = 0.0001).minimize(cost)
     init = tf.global_variables_initializer()
     sess.run(init)
-    epochs = 2
+    epochs = 5
     for epoch in range(epochs):
         epoch_cost = 0
         for i in range(batches):
