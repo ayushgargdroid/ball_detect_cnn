@@ -144,18 +144,16 @@ def optimize(num_iterations):
             acc_tot = 0
             for i in range(batches):
                 (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
-                print miniX.shape
                 session.run(optimizer, feed_dict={x: miniX, y_true: miniY})
                 del miniX,miniY
             for i in range(batches):
                 (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
-                print miniX.shape
                 acc = session.run(accuracy, feed_dict={x: miniX, y_true: miniY})
                 del miniX,miniY
                 acc_tot += acc
             acc_tot /= batches
             msg = "Optimization Iteration: {0:>6}, Training Accuracy: {1:>6.4%}"
-            print(msg.format(i + 1, acc))
+            print(msg.format(epoch+1, acc_tot))
 
     end_time = time.time()
 
@@ -163,4 +161,4 @@ def optimize(num_iterations):
 
     print("Time usage: " + str(timedelta(seconds=int(round(time_dif)))))
 
-optimize(num_iterations=10)
+optimize(num_iterations=100)
