@@ -40,8 +40,6 @@ dimen = x_train.shape[1:]
 batches = m/minibatch_size
 
 y_train = np.uint8([y_train[i][0] for i in range(len(y_train))])
-y_train_box = np.float32([y_train[i][1:] for i in range(len(y_train))])
-y_train_box.shape = (m,4)
 y_train.shape = (m,1)
 y_train = np.insert(y_train,1,0,1)
 for i in range(len(y_train)):
@@ -53,8 +51,6 @@ for i in range(len(y_train)):
         y_train[i][1] = 0
 y_true_cls = tf.argmax(y_train, dimension=1)
 y_test = np.uint8([y_test[i][0] for i in range(len(y_test))])
-y_test_box = np.float32([y_test[i][1:] for i in range(len(y_test))])
-y_test_box.shape = (y_test.shape[0],4)
 y_test.shape = (y_test.shape[0],1)
 y_test = np.insert(y_test,1,0,1)
 for i in range(len(y_test)):
@@ -118,12 +114,11 @@ num_channels = 3
 # Number of classes, one class for each of 10 digits.
 num_classes = 2
 
-x = tf.placeholder(tf.float32, shape=[None, img_size, img_size, num_channels], name='x')
+x = tf.placeholder(tf.float32, shape=[None, img_size, img_size], name='x')
 y_true = tf.placeholder(tf.float32, shape=[None, num_classes], name='y_true')
-y_true_box = tf.placeholder(tf.float32, shape=[None, 4], name='y_true_box')
 y_true_cls = tf.argmax(y_true, axis=1)
 
-layer_conv1, weights_conv1 = new_conv_layer(input=x,shape=[5,5,3,32],use_pooling=True)
+layer_conv1, weights_conv1 = new_conv_layer(input=x,shape=[5,5,1,32],use_pooling=True)
 layer_conv2, weights_conv2 = new_conv_layer(input=layer_conv1,shape=[5,5,32,32],use_pooling=False)
 layer_conv3, weights_conv3 = new_conv_layer(input=layer_conv2,shape=[5,5,32,32],use_pooling=True)
 layer_conv4, weights_conv4 = new_conv_layer(input=layer_conv3,shape=[5,5,32,128],use_pooling=False)
@@ -137,20 +132,13 @@ layer_fc1 = new_fc_layer(input=layer_flat,num_inputs=num_features,num_outputs=12
 layer_fc2 = new_fc_layer(input=layer_fc1,num_inputs=128,num_outputs=128,use_relu=True)
 layer_fc3 = new_fc_layer(input=layer_fc1,num_inputs=128,num_outputs=2,use_relu=False)
 
-layer_reg_fc1 = new_fc_layer(input=layer_flat,num_inputs=num_features,num_outputs=128,use_relu=True)
-layer_reg_fc2 = new_fc_layer(input=layer_reg_fc1,num_inputs=128,num_outputs=128,use_relu=True)
-layer_reg = new_fc_layer(input=layer_reg_fc2,num_inputs=128,num_outputs=4,use_relu=False)
-
 y_pred = tf.nn.softmax(layer_fc3)
 y_pred_cls = tf.argmax(y_pred, axis=1)
 
-cost_cls = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=layer_fc3,labels=y_true))
-optimizer_cls = tf.train.AdamOptimizer(learning_rate=0.001).minimize(cost_cls)
+cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=layer_fc3,labels=y_true))
+optimizer = tf.train.AdamOptimizer(learning_rate=0.001).minimize(cost)
 correct_prediction = tf.equal(y_pred_cls, y_true_cls)
-accuracy_cls = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-
-cost_reg = tf.reduce_mean(tf.sqrt( tf.reduce_sum(tf.square(tf.sub(layer_reg,y_true_box)),reduction_indices=1)))
-optimizer_reg = tf.train.AdamOptimizer(learning_rate=0.001).minimize(cost_reg)
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 saver = tf.train.Saver()
 
@@ -159,34 +147,35 @@ saver = tf.train.Saver()
 def optimize(num_iterations):
     start_time = time.time()
     with tf.Session() as session:
-        # saver.restore(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/bound_box_reg.ckpt")
+        # saver.restore(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/grayscale_classifier.ckpt")
         # print 'Restored'
         session.run(tf.global_variables_initializer())
         for epoch in range(num_iterations):
             acc_tot = 0
             acc_test = 0
             for i in range(batches):
-                (miniX,miniY,miniBox) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size],y_train_box[i*minibatch_size:(i+1)*minibatch_size]
-                session.run([optimizer_cls,optimizer_reg], feed_dict={x: miniX, y_true: miniY, y_true_box:miniBox})
+                (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
+                miniX = np.uint8([cv2.cvtColor(i,cv2.COLOR_BGR2GRAY) for i in miniX])
+                session.run(optimizer, feed_dict={x: miniX, y_true: miniY})
                 del miniX,miniY
 
             for i in range(batches):
-                (miniX,miniY,miniBox) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size],y_train_box[i*minibatch_size:(i+1)*minibatch_size]
-                acc = session.run([accuracy_cls,cost_reg], feed_dict={x: miniX, y_true: miniY, y_true_box:miniBox})
+                (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
+                acc = session.run(accuracy, feed_dict={x: miniX, y_true: miniY})
                 del miniX,miniY
                 acc_tot += acc
 
             for i in range(x_test.shape[0]/minibatch_size):
-                (miniX,miniY,miniBox) = x_test[i*minibatch_size:(i+1)*minibatch_size],y_test[i*minibatch_size:(i+1)*minibatch_size],y_test_box[i*minibatch_size:(i+1)*minibatch_size]
-                acc = session.run([accuracy_cls,cost_reg], feed_dict={x: miniX, y_true: miniY, y_true_box:miniBox})
+                (miniX,miniY) = x_test[i*minibatch_size:(i+1)*minibatch_size],y_test[i*minibatch_size:(i+1)*minibatch_size]
+                acc = session.run(accuracy, feed_dict={x: miniX, y_true: miniY})
                 del miniX,miniY
                 acc_test += acc
             acc_tot /= batches
             acc_test /= (x_test.shape[0]/minibatch_size)
-            msg = "Optimization Iteration: {0:>3}, Training Accuracy_cls: {1:>6.4%}, Test Accuracy_cls: {2:>6.4%}"
+            msg = "Optimization Iteration: {0:>6}, Training Accuracy: {1:>6.4%}, Test Accuracy: {2:>6.4%}"
             print(msg.format(epoch+1, acc_tot,acc_test))
 
-        # save_path = saver.save(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/bound_box_reg.ckpt")
+        # save_path = saver.save(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/grayscale_classifier.ckpt")
         # print("Model saved in file: %s" % save_path)
         end_time = time.time()
         time_dif = end_time - start_time
