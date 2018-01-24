@@ -189,3 +189,32 @@ def optimize(num_iterations):
                 print pred
 
 optimize(num_iterations=2)
+
+# dim = 64
+# x1_ = tf.placeholder('float32', shape=(None, dim))
+# x2_ = tf.placeholder('float32', shape=(None, dim))
+# y_ = tf.placeholder('uint8', shape=[None])   # uint8 for boolean
+
+# Then the loss tensor can be created by the function.
+
+# def loss(x1, x2, y):
+#     # Euclidean distance between x1,x2
+#     l2diff = tf.sqrt( tf.reduce_sum(tf.square(tf.sub(x1, x2)),
+#                                     reduction_indices=1))
+
+#     # you can try margin parameters
+#     margin = tf.constant(1.)     
+
+#     labels = tf.to_float(y)
+
+#     match_loss = tf.square(l2diff, 'match_term')
+#     mismatch_loss = tf.maximum(0., tf.sub(margin, tf.square(l2diff)), 'mismatch_term')
+
+#     # if label is 1, only match_loss will count, otherwise mismatch_loss
+#     loss = tf.add(tf.mul(labels, match_loss), \
+#                   tf.mul((1 - labels), mismatch_loss), 'loss_add')
+
+#     loss_mean = tf.reduce_mean(loss)
+#     return loss_mean
+
+# loss_ = loss(x1_, x2_, y_)
