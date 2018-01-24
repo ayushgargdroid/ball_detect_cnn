@@ -14,17 +14,27 @@ y_train = np.load('y_train.npy')
 x_test = np.load('x_test.npy')
 y_test = np.load('y_test.npy')
 
-img = x_train[0]
-img = cv2.resize(img,(60,60))
-t = np.uint8([img])
+# img = x_train[0]
+# img = cv2.resize(img,(128,128))
+# t = np.uint8([img])
 
-for i in range(1,len(x_train)):
-    img = x_train[i]
-    img = cv2.resize(img,(60,60))
-    t=np.append(t,[img],0)
-x_train = t
+# for i in range(1,len(x_train)):
+#     img = x_train[i]
+#     img = cv2.resize(img,(128,128))
+#     t=np.append(t,[img],0)
+# x_train = t
+
+# img = x_test[0]
+# img = cv2.resize(img,(128,128))
+# t = np.uint8([img])
+
+# for i in range(1,len(x_test)):
+#     img = x_test[i]
+#     img = cv2.resize(img,(128,128))
+#     t=np.append(t,[img],0)
+# x_test = t
     
-minibatch_size = 64
+minibatch_size = 32
 m = x_train.shape[0]
 dimen = x_train.shape[1:]
 batches = m/minibatch_size
@@ -77,10 +87,8 @@ def new_biases(length):
 def new_conv_layer(input,shape,use_pooling=True):  
     weights = new_weights(shape=shape)
     biases = new_biases(length=shape[-1])
-    print weights.get_shape()
     layer = tf.nn.conv2d(input=input,filter=weights,strides=[1, 1, 1, 1],padding='SAME')
     layer += biases
-    print layer.get_shape()
     if use_pooling:
         layer = tf.nn.max_pool(value=layer,ksize=[1, 2, 2, 1],strides=[1, 2, 2, 1],padding='SAME')
     layer = tf.nn.relu(layer)
@@ -106,59 +114,78 @@ num_channels = 3
 # Number of classes, one class for each of 10 digits.
 num_classes = 2
 
-# Convolutional Layer 1.
-filter_size1 = 5          # Convolution filters are 5 x 5 pixels.
-num_filters1 = 16         # There are 16 of these filters.
-
-# Convolutional Layer 2.
-filter_size2 = 5          # Convolution filters are 5 x 5 pixels.
-num_filters2 = 36         # There are 36 of these filters.
-
-# Fully-connected layer.
-fc_size = 128
-
 x = tf.placeholder(tf.float32, shape=[None, img_size, img_size, num_channels], name='x')
 y_true = tf.placeholder(tf.float32, shape=[None, num_classes], name='y_true')
 y_true_cls = tf.argmax(y_true, axis=1)
 
 layer_conv1, weights_conv1 = new_conv_layer(input=x,shape=[5,5,3,32],use_pooling=True)
-layer_conv2, weights_conv2 = new_conv_layer(input=layer_conv1,shape=[5,5,32,32],use_pooling=True)
-layer_flat, num_features = flatten_layer(layer_conv2)
-layer_fc1 = new_fc_layer(input=layer_flat,num_inputs=num_features,num_outputs=fc_size,use_relu=True)
-layer_fc2 = new_fc_layer(input=layer_fc1,num_inputs=fc_size,num_outputs=num_classes,use_relu=False)
-y_pred = tf.nn.softmax(layer_fc2)
+layer_conv2, weights_conv2 = new_conv_layer(input=layer_conv1,shape=[5,5,32,32],use_pooling=False)
+layer_conv3, weights_conv3 = new_conv_layer(input=layer_conv2,shape=[5,5,32,32],use_pooling=True)
+layer_conv4, weights_conv4 = new_conv_layer(input=layer_conv3,shape=[5,5,32,128],use_pooling=False)
+layer_conv5, weights_conv5 = new_conv_layer(input=layer_conv4,shape=[5,5,128,128],use_pooling=True)
+layer_conv6, weights_conv6 = new_conv_layer(input=layer_conv5,shape=[5,5,128,128],use_pooling=False)
+layer_conv7, weights_conv7 = new_conv_layer(input=layer_conv6,shape=[5,5,128,128],use_pooling=True)
+
+layer_flat, num_features = flatten_layer(layer_conv7)
+
+layer_fc1 = new_fc_layer(input=layer_flat,num_inputs=num_features,num_outputs=128,use_relu=True)
+layer_fc2 = new_fc_layer(input=layer_fc1,num_inputs=128,num_outputs=128,use_relu=True)
+layer_fc3 = new_fc_layer(input=layer_fc1,num_inputs=128,num_outputs=2,use_relu=False)
+
+y_pred = tf.nn.softmax(layer_fc3)
 y_pred_cls = tf.argmax(y_pred, axis=1)
 
-cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=layer_fc2,labels=y_true))
-optimizer = tf.train.AdamOptimizer(learning_rate=0.01).minimize(cost)
+cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=layer_fc3,labels=y_true))
+optimizer = tf.train.AdamOptimizer(learning_rate=0.001).minimize(cost)
 correct_prediction = tf.equal(y_pred_cls, y_true_cls)
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+saver = tf.train.Saver()
 
 # Counter for total number of iterations performed so far.
 
 def optimize(num_iterations):
     start_time = time.time()
     with tf.Session() as session:
-        session.run(tf.global_variables_initializer())
-        for epoch in range(num_iterations):
-            acc_tot = 0
-            for i in range(batches):
-                (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
-                session.run(optimizer, feed_dict={x: miniX, y_true: miniY})
-                del miniX,miniY
-            for i in range(batches):
-                (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
-                acc = session.run(accuracy, feed_dict={x: miniX, y_true: miniY})
-                del miniX,miniY
-                acc_tot += acc
-            acc_tot /= batches
-            msg = "Optimization Iteration: {0:>6}, Training Accuracy: {1:>6.4%}"
-            print(msg.format(epoch+1, acc_tot))
+        saver.restore(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/mnist_style_classifier.ckpt")
+        print 'Restored'
+        # session.run(tf.global_variables_initializer())
+        # for epoch in range(num_iterations):
+        #     acc_tot = 0
+        #     acc_test = 0
+        #     # for i in range(batches):
+        #     #     (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
+        #     #     session.run(optimizer, feed_dict={x: miniX, y_true: miniY})
+        #     #     del miniX,miniY
 
-    end_time = time.time()
+        #     for i in range(batches):
+        #         (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
+        #         acc = session.run(accuracy, feed_dict={x: miniX, y_true: miniY})
+        #         del miniX,miniY
+        #         acc_tot += acc
 
-    time_dif = end_time - start_time
+        #     for i in range(x_test.shape[0]/minibatch_size):
+        #         (miniX,miniY) = x_test[i*minibatch_size:(i+1)*minibatch_size],y_test[i*minibatch_size:(i+1)*minibatch_size]
+        #         acc = session.run(accuracy, feed_dict={x: miniX, y_true: miniY})
+        #         del miniX,miniY
+        #         acc_test += acc
+        #     acc_tot /= batches
+        #     acc_test /= (x_test.shape[0]/minibatch_size)
+        #     msg = "Optimization Iteration: {0:>6}, Training Accuracy: {1:>6.4%}, Test Accuracy: {2:>6.4%}"
+        #     print(msg.format(epoch+1, acc_tot,acc_test))
 
-    print("Time usage: " + str(timedelta(seconds=int(round(time_dif)))))
+        # # save_path = saver.save(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/mnist_style_classifier.ckpt")
+        # # print("Model saved in file: %s" % save_path)
+        # end_time = time.time()
+        # time_dif = end_time - start_time
+        # print("Time usage: " + str(timedelta(seconds=int(round(time_dif)))))
+        cap = cv2.VideoCapture(0)
+        while True:
+            _, frame = cap.read()
+            if _:
+                frame = cv2.resize(frame,(200,200))
+                frame.shape = (1,200,200,3)
+                pred = session.run(y_pred_cls,feed_dict={x:frame})
+                print pred
 
-optimize(num_iterations=100)
+optimize(num_iterations=2)
