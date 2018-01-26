@@ -114,7 +114,7 @@ num_channels = 3
 # Number of classes, one class for each of 10 digits.
 num_classes = 2
 
-x = tf.placeholder(tf.float32, shape=[None, img_size, img_size], name='x')
+x = tf.placeholder(tf.float32, shape=[None, img_size, img_size,1], name='x')
 y_true = tf.placeholder(tf.float32, shape=[None, num_classes], name='y_true')
 y_true_cls = tf.argmax(y_true, axis=1)
 
@@ -129,7 +129,9 @@ layer_conv7, weights_conv7 = new_conv_layer(input=layer_conv6,shape=[5,5,128,128
 layer_flat, num_features = flatten_layer(layer_conv7)
 
 layer_fc1 = new_fc_layer(input=layer_flat,num_inputs=num_features,num_outputs=128,use_relu=True)
+layer_fc1 = tf.layers.dropout(layer_fc1, rate=0.5, training=True)
 layer_fc2 = new_fc_layer(input=layer_fc1,num_inputs=128,num_outputs=128,use_relu=True)
+layer_fc2 = tf.layers.dropout(layer_fc2, rate=0.5, training=True)
 layer_fc3 = new_fc_layer(input=layer_fc1,num_inputs=128,num_outputs=2,use_relu=False)
 
 y_pred = tf.nn.softmax(layer_fc3)
@@ -156,17 +158,22 @@ def optimize(num_iterations):
             for i in range(batches):
                 (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
                 miniX = np.uint8([cv2.cvtColor(i,cv2.COLOR_BGR2GRAY) for i in miniX])
+                miniX = np.reshape(miniX,(32,200,200,1))
                 session.run(optimizer, feed_dict={x: miniX, y_true: miniY})
                 del miniX,miniY
 
             for i in range(batches):
                 (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
+                miniX = np.uint8([cv2.cvtColor(i,cv2.COLOR_BGR2GRAY) for i in miniX])
+                miniX = np.reshape(miniX,(32,200,200,1))
                 acc = session.run(accuracy, feed_dict={x: miniX, y_true: miniY})
                 del miniX,miniY
                 acc_tot += acc
 
             for i in range(x_test.shape[0]/minibatch_size):
                 (miniX,miniY) = x_test[i*minibatch_size:(i+1)*minibatch_size],y_test[i*minibatch_size:(i+1)*minibatch_size]
+                miniX = np.uint8([cv2.cvtColor(i,cv2.COLOR_BGR2GRAY) for i in miniX])
+                miniX = np.reshape(miniX,(32,200,200,1))
                 acc = session.run(accuracy, feed_dict={x: miniX, y_true: miniY})
                 del miniX,miniY
                 acc_test += acc
@@ -175,8 +182,8 @@ def optimize(num_iterations):
             msg = "Optimization Iteration: {0:>6}, Training Accuracy: {1:>6.4%}, Test Accuracy: {2:>6.4%}"
             print(msg.format(epoch+1, acc_tot,acc_test))
 
-        # save_path = saver.save(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/grayscale_classifier.ckpt")
-        # print("Model saved in file: %s" % save_path)
+        save_path = saver.save(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/grayscale_classifier.ckpt")
+        print("Model saved in file: %s" % save_path)
         end_time = time.time()
         time_dif = end_time - start_time
         print("Time usage: " + str(timedelta(seconds=int(round(time_dif)))))
@@ -184,9 +191,10 @@ def optimize(num_iterations):
         while True:
             _, frame = cap.read()
             if _:
+                frame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
                 frame = cv2.resize(frame,(200,200))
-                frame.shape = (1,200,200,3)
+                frame.shape = (1,200,200,1)
                 pred = session.run(y_pred_cls,feed_dict={x:frame})
                 print pred
 
-optimize(num_iterations=2)
+optimize(num_iterations=100)

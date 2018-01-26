@@ -1,2 +1,2 @@
-model_checkpoint_path: "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/mnist_style_classifier.ckpt"
-all_model_checkpoint_paths: "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/mnist_style_classifier.ckpt"
+model_checkpoint_path: "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/bound_box_reg.ckpt"
+all_model_checkpoint_paths: "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/bound_box_reg.ckpt"
