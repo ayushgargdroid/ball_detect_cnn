@@ -1,3 +1,5 @@
+import imgaug as ia
+from imgaug import augmenters as iaa
 import tensorflow as tf
 import numpy as np
 from sklearn.metrics import confusion_matrix
@@ -5,6 +7,7 @@ import time
 from datetime import timedelta
 import os
 import cv2
+import cv2.cv as cv
 
 dataset_name = 'labelled_dataset1'
 os.chdir('/home/mrmai/Ayush/ball_detect_cnn/'+dataset_name)
@@ -13,6 +16,16 @@ x_train = np.load('x_train.npy')
 y_train = np.load('y_train.npy')
 x_test = np.load('x_test.npy')
 y_test = np.load('y_test.npy')
+
+seq = iaa.Sequential([
+    iaa.Multiply((0.5, 1.5), per_channel=0.5),
+    iaa.Crop(px=(0, 16)), # crop images from each side by 0 to 16px (randomly chosen)
+    iaa.Fliplr(0.5), # horizontally flip 50% of the images
+    iaa.GaussianBlur(sigma=(0, 3.0)) # blur images with a sigma of 0 to 3.0
+])
+
+images_aug = seq.augment_images(x_train)
+x_train = images_aug.copy()
 
 # img = x_train[0]
 # img = cv2.resize(img,(128,128))
@@ -130,7 +143,7 @@ layer_flat, num_features = flatten_layer(layer_conv7)
 
 layer_fc1 = new_fc_layer(input=layer_flat,num_inputs=num_features,num_outputs=128,use_relu=True)
 layer_fc2 = new_fc_layer(input=layer_fc1,num_inputs=128,num_outputs=128,use_relu=True)
-layer_fc3 = new_fc_layer(input=layer_fc1,num_inputs=128,num_outputs=2,use_relu=False)
+layer_fc3 = new_fc_layer(input=layer_fc2,num_inputs=128,num_outputs=2,use_relu=False)
 
 y_pred = tf.nn.softmax(layer_fc3)
 y_pred_cls = tf.argmax(y_pred, axis=1)
@@ -153,10 +166,10 @@ def optimize(num_iterations):
         # for epoch in range(num_iterations):
         #     acc_tot = 0
         #     acc_test = 0
-        #     # for i in range(batches):
-        #     #     (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
-        #     #     session.run(optimizer, feed_dict={x: miniX, y_true: miniY})
-        #     #     del miniX,miniY
+        #     for i in range(batches):
+        #         (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
+        #         session.run(optimizer, feed_dict={x: miniX, y_true: miniY})
+        #         del miniX,miniY
 
         #     for i in range(batches):
         #         (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
@@ -174,8 +187,8 @@ def optimize(num_iterations):
         #     msg = "Optimization Iteration: {0:>6}, Training Accuracy: {1:>6.4%}, Test Accuracy: {2:>6.4%}"
         #     print(msg.format(epoch+1, acc_tot,acc_test))
 
-        # # save_path = saver.save(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/mnist_style_classifier.ckpt")
-        # # print("Model saved in file: %s" % save_path)
+        # save_path = saver.save(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/mnist_style_classifier.ckpt")
+        # print("Model saved in file: %s" % save_path)
         # end_time = time.time()
         # time_dif = end_time - start_time
         # print("Time usage: " + str(timedelta(seconds=int(round(time_dif)))))
@@ -184,8 +197,21 @@ def optimize(num_iterations):
             _, frame = cap.read()
             if _:
                 frame = cv2.resize(frame,(200,200))
+                # tt = frame.copy()
+                t = frame.copy()
+                # cimg = cv2.cvtColor(tt,cv2.COLOR_BGR2GRAY)
+                # img = cv2.medianBlur(cimg,5)
+                # circles = cv2.HoughCircles(img,cv.CV_HOUGH_GRADIENT,1,20,param1=50,param2=30,minRadius=0,maxRadius=0)
+                # circles = np.uint16(np.around(circles))
+                # for i in circles[0,:]:
+                #     # draw the outer circle
+                #     cv2.circle(t,(i[0],i[1]),i[2],(0,255,0),2)
+                #     # draw the center of the circle
+                #     cv2.circle(t,(i[0],i[1]),2,(0,0,255),3)
                 frame.shape = (1,200,200,3)
                 pred = session.run(y_pred_cls,feed_dict={x:frame})
+                cv2.imshow('Image',t)
+                cv2.waitKey(1)
                 print pred
 
-optimize(num_iterations=2)
+optimize(num_iterations=30)

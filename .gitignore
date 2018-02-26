@@ -3,6 +3,16 @@ dataset2/
 dataset3/
 dataset4/
 dataset5/
+cnn_tries/grayscale_classifier.ckpt.data-00000-of-00001
+cnn_tries/grayscale_classifier.ckpt.index
+cnn_tries/grayscale_classifier.ckpt.meta
+cnn_tries/bound_box_reg.ckpt.data-00000-of-00001
+cnn_tries/bound_box_reg.ckpt.index
+cnn_tries/bound_box_reg.ckpt.meta
+cnn_tries/checkpoint
+cnn_tries/mnist_style_classifier.ckpt.data-00000-of-00001
+cnn_tries/mnist_style_classifier.ckpt.index
+cnn_tries/mnist_style_classifier.ckpt.meta
 encoding-check/
 labelled_dataset1/
 full-size/
@@ -20,4 +30,4 @@ names_test.npy
 links.txt
 my_model11.h5
 new_model5.h5
-.vscode
+.vscode/

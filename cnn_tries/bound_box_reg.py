@@ -13,7 +13,8 @@ y_train = np.load('y_train.npy')
 x_test = np.load('x_test.npy')
 y_test = np.load('y_test.npy')
 
-resuts_file = open('results.txt','a')
+tf.reset_default_graph()
+results_file = open('results.txt','a')
 
 # img = x_train[0]
 # img = cv2.resize(img,(128,128))
@@ -163,7 +164,8 @@ with tf.device('/device:GPU:0'):
 with tf.device('/device:GPU:1'):
     layer_reg_fc1, weights_reg_fc_1, bias_reg_fc_1 = new_fc_layer(input=layer_flat,num_inputs=num_features,num_outputs=128,use_relu=True)
     layer_reg_fc2, weights_reg_fc_2, bias_reg_fc_2 = new_fc_layer(input=layer_reg_fc1,num_inputs=128,num_outputs=128,use_relu=True)
-    layer_reg, weights_reg_fc_3, bias_reg_fc_3 = new_fc_layer(input=layer_reg_fc2,num_inputs=128,num_outputs=4,use_relu=False)
+    layer_reg_fc3, weights_reg_fc_3, bias_reg_fc_3 = new_fc_layer(input=layer_reg_fc2,num_inputs=128,num_outputs=128,use_relu=True)
+    layer_reg, weights_reg_fc_4, bias_reg_fc_4 = new_fc_layer(input=layer_reg_fc3,num_inputs=128,num_outputs=4,use_relu=False)
 
     cost_reg = tf.reduce_mean(tf.sqrt( tf.reduce_sum(tf.square(tf.subtract(layer_reg,y_true_box)),reduction_indices=1)))
     optimizer_reg = tf.train.AdamOptimizer(learning_rate=0.001).minimize(cost_reg,var_list=[weights_reg_fc_1,weights_reg_fc_2,weights_reg_fc_3,bias_reg_fc_1,bias_reg_fc_2,bias_reg_fc_3])
@@ -179,66 +181,70 @@ def optimize(num_iterations):
     acc_box_tot = 0
     acc_box_test = 0
     with tf.Session() as session:
-        # saver.restore(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/bound_box_reg.ckpt")
-        # print 'Restored'
-        session.run(tf.global_variables_initializer())
-        for epoch in range(num_iterations):
-            for i in range(batches):
-                (miniX,miniY,miniBox) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size],y_train_box[i*minibatch_size:(i+1)*minibatch_size]
-                if acc_cls_test*100 >=90:
-                    session.run([optimizer_reg], feed_dict={x: miniX, y_true: miniY, y_true_box:miniBox})
+        saver.restore(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/bound_box_reg.ckpt")
+        print 'Restored'
+        # session.run(tf.global_variables_initializer())
+        # for epoch in range(num_iterations):
+        #     for i in range(batches):
+        #         (miniX,miniY,miniBox) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size],y_train_box[i*minibatch_size:(i+1)*minibatch_size]
+        #         if acc_cls_test*100 >=90:
+        #             session.run([optimizer_reg], feed_dict={x: miniX, y_true: miniY, y_true_box:miniBox})
+        #         else:
+        #             session.run([optimizer_cls,optimizer_reg], feed_dict={x: miniX, y_true: miniY, y_true_box:miniBox})
+        #         del miniX,miniY
+
+        #     acc_cls_tot = 0
+        #     acc_cls_test = 0
+        #     acc_box_tot = 0
+        #     acc_box_test = 0
+
+        #     for i in range(batches):
+        #         (miniX,miniY,miniBox) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size],y_train_box[i*minibatch_size:(i+1)*minibatch_size]
+        #         acc,acc1 = session.run([accuracy_cls,cost_reg], feed_dict={x: miniX, y_true: miniY, y_true_box:miniBox})
+        #         del miniX,miniY
+        #         acc_cls_tot += acc
+        #         acc_box_tot += acc1
+
+        #     for i in range(x_test.shape[0]/minibatch_size):
+        #         (miniX,miniY,miniBox) = x_test[i*minibatch_size:(i+1)*minibatch_size],y_test[i*minibatch_size:(i+1)*minibatch_size],y_test_box[i*minibatch_size:(i+1)*minibatch_size]
+        #         acc,acc1 = session.run([accuracy_cls,cost_reg], feed_dict={x: miniX, y_true: miniY, y_true_box:miniBox})
+        #         del miniX,miniY
+        #         acc_cls_test += acc
+        #         acc_box_test += acc1
+
+        #     acc_cls_tot /= batches
+        #     acc_cls_test /= (x_test.shape[0]/minibatch_size)
+        #     acc_box_tot /= batches
+        #     acc_box_test /= (x_test.shape[0]/minibatch_size)
+        #     msg = "Optimization Iteration: {0:>3}, Training Accuracy_cls: {1:>6.4%}, Test Accuracy_cls: {2:>6.4%}, Training Accuracy_box: {3:>6.4}, Test Accuracy_box: {4:>6.4}"
+        #     print(msg.format(epoch+1, acc_cls_tot,acc_cls_test,acc_box_tot,acc_box_test))
+        #     results_file.write(msg.format(epoch+1, acc_cls_tot,acc_cls_test,acc_box_tot,acc_box_test))
+        #     results_file.write('\n')
+
+        # results_file.write('\n')
+        # results_file.close()
+        # save_path = saver.save(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/bound_box_reg.ckpt")
+        # print("Model saved in file: %s" % save_path)
+        # end_time = time.time()
+        # time_dif = end_time - start_time
+        # print("Time usage: " + str(timedelta(seconds=int(round(time_dif)))))
+        cap = cv2.VideoCapture(0)
+        while True:
+            _, frame = cap.read()
+            if _:
+                frame = cv2.resize(frame,(200,200))
+                t = frame.copy()
+                frame.shape = (1,200,200,3)
+                pred,bb = session.run([y_pred_cls,layer_reg],feed_dict={x:frame})
+                print pred
+                if(pred[0]==1):
+                    live_map(t,bb.T)
                 else:
-                    session.run([optimizer_cls,optimizer_reg], feed_dict={x: miniX, y_true: miniY, y_true_box:miniBox})
-                del miniX,miniY
+                    cv2.imshow('Image',t)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    cv2.destroyAllWindows()
+                    cap.release()
+                    session.close()
+                    break
 
-            acc_cls_tot = 0
-            acc_cls_test = 0
-            acc_box_tot = 0
-            acc_box_test = 0
-
-            for i in range(batches):
-                (miniX,miniY,miniBox) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size],y_train_box[i*minibatch_size:(i+1)*minibatch_size]
-                acc,acc1 = session.run([accuracy_cls,cost_reg], feed_dict={x: miniX, y_true: miniY, y_true_box:miniBox})
-                del miniX,miniY
-                acc_cls_tot += acc
-                acc_box_tot += acc1
-
-            for i in range(x_test.shape[0]/minibatch_size):
-                (miniX,miniY,miniBox) = x_test[i*minibatch_size:(i+1)*minibatch_size],y_test[i*minibatch_size:(i+1)*minibatch_size],y_test_box[i*minibatch_size:(i+1)*minibatch_size]
-                acc,acc1 = session.run([accuracy_cls,cost_reg], feed_dict={x: miniX, y_true: miniY, y_true_box:miniBox})
-                del miniX,miniY
-                acc_cls_test += acc
-                acc_box_test += acc1
-
-            acc_cls_tot /= batches
-            acc_cls_test /= (x_test.shape[0]/minibatch_size)
-            acc_box_tot /= batches
-            acc_box_test /= (x_test.shape[0]/minibatch_size)
-            msg = "Optimization Iteration: {0:>3}, Training Accuracy_cls: {1:>6.4%}, Test Accuracy_cls: {2:>6.4%}, Training Accuracy_box: {3:>6.4}, Test Accuracy_box: {4:>6.4}"
-            print(msg.format(epoch+1, acc_cls_tot,acc_cls_test,acc_box_tot,acc_box_test))
-            resuts_file.write(msg.format(epoch+1, acc_cls_tot,acc_cls_test,acc_box_tot,acc_box_test))
-
-        resuts_file.close()
-        save_path = saver.save(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/bound_box_reg.ckpt")
-        print("Model saved in file: %s" % save_path)
-        end_time = time.time()
-        time_dif = end_time - start_time
-        print("Time usage: " + str(timedelta(seconds=int(round(time_dif)))))
-        # cap = cv2.VideoCapture(0)
-        # while True:
-        #     _, frame = cap.read()
-        #     if _:
-        #         frame = cv2.resize(frame,(200,200))
-        #         t = frame.copy()
-        #         frame.shape = (1,200,200,3)
-        #         pred,bb = session.run([y_pred_cls,layer_reg],feed_dict={x:frame})
-        #         print t.shape
-        #         print pred
-        #         live_map(t,bb.T)
-        #         if cv2.waitKey(1) & 0xFF == ord('q'):
-        #             cv2.destroyAllWindows()
-        #             cap.release()
-        #             session.close()
-        #             break
-
-optimize(num_iterations=10)
+optimize(num_iterations=30)
