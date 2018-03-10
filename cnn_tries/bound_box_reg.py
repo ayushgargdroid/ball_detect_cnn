@@ -247,4 +247,4 @@ def optimize(num_iterations):
                     session.close()
                     break
 
-optimize(num_iterations=30)
+optimize(num_iterations=50)

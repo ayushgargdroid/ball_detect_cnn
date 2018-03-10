@@ -31,3 +31,7 @@ links.txt
 my_model11.h5
 new_model5.h5
 .vscode/
+cnn_tries/mnist_style_classifier1.ckpt.*
+data_augment_tries/aug_mid_test.ckpt.*
+dataset_cust
+data_augment_tries/checkpoint
