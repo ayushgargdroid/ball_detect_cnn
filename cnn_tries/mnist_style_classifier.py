@@ -18,15 +18,15 @@ y_train = np.load('y_train.npy')
 x_test = np.load('x_test.npy')
 y_test = np.load('y_test.npy')
 
-seq = iaa.Sequential([
-    iaa.Multiply((0.5, 1.5), per_channel=0.5),
-    iaa.Crop(px=(0, 16)), # crop images from each side by 0 to 16px (randomly chosen)
-    iaa.Fliplr(0.5), # horizontally flip 50% of the images
-    iaa.GaussianBlur(sigma=(0, 3.0)) # blur images with a sigma of 0 to 3.0
-])
+# seq = iaa.Sequential([
+#     iaa.Multiply((0.5, 1.5), per_channel=0.5),
+#     iaa.Crop(px=(0, 16)), # crop images from each side by 0 to 16px (randomly chosen)
+#     iaa.Fliplr(0.5), # horizontally flip 50% of the images
+#     iaa.GaussianBlur(sigma=(0, 3.0)) # blur images with a sigma of 0 to 3.0
+# ])
 
-images_aug = seq.augment_images(x_train)
-x_train = images_aug.copy()
+# images_aug = seq.augment_images(x_train)
+# x_train = images_aug.copy()
 
 # img = x_train[0]
 # img = cv2.resize(img,(128,128))
@@ -120,6 +120,7 @@ def new_fc_layer(input,num_inputs,num_outputs,use_relu=True):
     layer = tf.matmul(input, weights) + biases
     if use_relu:
         layer = tf.nn.relu(layer)
+    layer = tf.nn.dropout(layer,keep_prob=keep_prob)
     return layer
 
 img_size = dimen[0]
@@ -131,6 +132,7 @@ num_classes = 2
 x = tf.placeholder(tf.float32, shape=[None, 200, 200, num_channels], name='x')
 y_true = tf.placeholder(tf.float32, shape=[None, num_classes], name='y_true')
 y_true_cls = tf.argmax(y_true, axis=1)
+keep_prob = tf.placeholder(tf.float32,name='keep_prob')
 
 layer_conv1, weights_conv1 = new_conv_layer(input=x,shape=[5,5,3,32],use_pooling=True)
 layer_conv2, weights_conv2 = new_conv_layer(input=layer_conv1,shape=[5,5,32,32],use_pooling=False)
@@ -161,71 +163,71 @@ saver = tf.train.Saver()
 def optimize(num_iterations):
     start_time = time.time()
     with tf.Session() as session:
-        # saver.restore(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/mnist_style_classifier.ckpt")
-        # print 'Restored'
-        session.run(tf.global_variables_initializer())
-        for epoch in range(num_iterations):
-            acc_tot = 0
-            acc_test = 0
-            for i in range(batches):
-                (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
-                # t = np.zeros([minibatch_size,480,480,3])
-                # for j in range(minibatch_size):
-                #     t[j] = cv2.resize(miniX[j],(480,480))
-                # print(t.shape)
-                # miniX = t
-                session.run(optimizer, feed_dict={x: miniX, y_true: miniY})
-                del miniX,miniY
+        saver.restore(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/mnist_style_classifier.ckpt")
+        print 'Restored'
+        # session.run(tf.global_variables_initializer())
+        # for epoch in range(num_iterations):
+        #     acc_tot = 0
+        #     acc_test = 0
+        #     for i in range(batches):
+        #         (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
+        #         # t = np.zeros([minibatch_size,480,480,3])
+        #         # for j in range(minibatch_size):
+        #         #     t[j] = cv2.resize(miniX[j],(480,480))
+        #         # print(t.shape)
+        #         # miniX = t
+        #         session.run(optimizer, feed_dict={x: miniX, y_true: miniY,keep_prob: 0.5})
+        #         del miniX,miniY
 
-            for i in range(batches):
-                (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
-                # t = np.zeros([minibatch_size,480,480,3])
-                # for j in range(minibatch_size):
-                #     t[j] = cv2.resize(miniX[j],(480,480))
-                # miniX = t
-                acc = session.run(accuracy, feed_dict={x: miniX, y_true: miniY})
-                del miniX,miniY
-                acc_tot += acc
+        #     for i in range(batches):
+        #         (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
+        #         # t = np.zeros([minibatch_size,480,480,3])
+        #         # for j in range(minibatch_size):
+        #         #     t[j] = cv2.resize(miniX[j],(480,480))
+        #         # miniX = t
+        #         acc = session.run(accuracy, feed_dict={x: miniX, y_true: miniY,keep_prob: 1.0})
+        #         del miniX,miniY
+        #         acc_tot += acc
 
-            for i in range(x_test.shape[0]/minibatch_size):
-                (miniX,miniY) = x_test[i*minibatch_size:(i+1)*minibatch_size],y_test[i*minibatch_size:(i+1)*minibatch_size]
-                # t = np.zeros([minibatch_size,480,480,3])
-                # for j in range(minibatch_size):
-                #     t[j] = cv2.resize(miniX[j],(480,480))
-                # miniX = t
-                acc = session.run(accuracy, feed_dict={x: miniX, y_true: miniY})
-                del miniX,miniY
-                acc_test += acc
-            acc_tot /= batches
-            acc_test /= (x_test.shape[0]/minibatch_size)
-            msg = "Optimization Iteration: {0:>6}, Training Accuracy: {1:>6.4%}, Test Accuracy: {2:>6.4%}"
-            print(msg.format(epoch+1, acc_tot,acc_test))
+        #     for i in range(x_test.shape[0]/minibatch_size):
+        #         (miniX,miniY) = x_test[i*minibatch_size:(i+1)*minibatch_size],y_test[i*minibatch_size:(i+1)*minibatch_size]
+        #         # t = np.zeros([minibatch_size,480,480,3])
+        #         # for j in range(minibatch_size):
+        #         #     t[j] = cv2.resize(miniX[j],(480,480))
+        #         # miniX = t
+        #         acc = session.run(accuracy, feed_dict={x: miniX, y_true: miniY,keep_prob: 1.0})
+        #         del miniX,miniY
+        #         acc_test += acc
+        #     acc_tot /= batches
+        #     acc_test /= (x_test.shape[0]/minibatch_size)
+        #     msg = "Optimization Iteration: {0:>6}, Training Accuracy: {1:>6.4%}, Test Accuracy: {2:>6.4%}"
+        #     print(msg.format(epoch+1, acc_tot,acc_test))
 
-        save_path = saver.save(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/mnist_style_classifier.ckpt")
-        print("Model saved in file: %s" % save_path)
-        end_time = time.time()
-        time_dif = end_time - start_time
-        print("Time usage: " + str(timedelta(seconds=int(round(time_dif)))))
-        # cap = cv2.VideoCapture(0)
-        # while True:
-        #     _, frame = cap.read()
-        #     if _:
-        #         frame = cv2.resize(frame,(200,200))
-        #         # tt = frame.copy()
-        #         t = frame.copy()
-        #         # cimg = cv2.cvtColor(tt,cv2.COLOR_BGR2GRAY)
-        #         # img = cv2.medianBlur(cimg,5)
-        #         # circles = cv2.HoughCircles(img,cv.CV_HOUGH_GRADIENT,1,20,param1=50,param2=30,minRadius=0,maxRadius=0)
-        #         # circles = np.uint16(np.around(circles))
-        #         # for i in circles[0,:]:
-        #         #     # draw the outer circle
-        #         #     cv2.circle(t,(i[0],i[1]),i[2],(0,255,0),2)
-        #         #     # draw the center of the circle
-        #         #     cv2.circle(t,(i[0],i[1]),2,(0,0,255),3)
-        #         frame.shape = (1,200,200,3)
-        #         pred = session.run(y_pred_cls,feed_dict={x:frame})
-        #         cv2.imshow('Image',t)
-        #         cv2.waitKey(1)
-        #         print pred
+        # save_path = saver.save(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/mnist_style_classifier.ckpt")
+        # print("Model saved in file: %s" % save_path)
+        # end_time = time.time()
+        # time_dif = end_time - start_time
+        # print("Time usage: " + str(timedelta(seconds=int(round(time_dif)))))
+        cap = cv2.VideoCapture(0)
+        while True:
+            _, frame = cap.read()
+            if _:
+                frame = cv2.resize(frame,(200,200))
+                # tt = frame.copy()
+                t = frame.copy()
+                # cimg = cv2.cvtColor(tt,cv2.COLOR_BGR2GRAY)
+                # img = cv2.medianBlur(cimg,5)
+                # circles = cv2.HoughCircles(img,cv.CV_HOUGH_GRADIENT,1,20,param1=50,param2=30,minRadius=0,maxRadius=0)
+                # circles = np.uint16(np.around(circles))
+                # for i in circles[0,:]:
+                #     # draw the outer circle
+                #     cv2.circle(t,(i[0],i[1]),i[2],(0,255,0),2)
+                #     # draw the center of the circle
+                #     cv2.circle(t,(i[0],i[1]),2,(0,0,255),3)
+                frame.shape = (1,200,200,3)
+                pred = session.run(y_pred_cls,feed_dict={x:frame,keep_prob: 1.0})
+                cv2.imshow('Image',t)
+                cv2.waitKey(1)
+                print pred
 
-optimize(num_iterations=50)
+optimize(num_iterations=80)
