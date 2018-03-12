@@ -10,7 +10,7 @@ import cv2
 
 # dataset_name = 'labelled_dataset1'
 dataset_name = 'dataset3'
-os.chdir('/home/mrmai/Ayush/ball_detect_cnn/'+dataset_name)
+os.chdir('./../'+dataset_name)
 
 x_train = np.load('x_train.npy')
 y_train = np.load('y_train.npy')
