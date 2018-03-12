@@ -86,7 +86,7 @@ y_test_cls = np.argmax(y_test, axis=1)
 def map(X,Y):
     for i in range(len(X)):
         cv2.imshow('Image',X[i])
-        print Y[i]
+        print(Y[i])
         cv2.waitKey(0)
     cv2.destroyAllWindows()
     
@@ -164,7 +164,7 @@ def optimize(num_iterations):
     start_time = time.time()
     with tf.Session() as session:
         saver.restore(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/mnist_style_classifier.ckpt")
-        print 'Restored'
+        print('Restored')
         # session.run(tf.global_variables_initializer())
         # for epoch in range(num_iterations):
         #     acc_tot = 0
@@ -228,6 +228,6 @@ def optimize(num_iterations):
                 pred = session.run(y_pred_cls,feed_dict={x:frame,keep_prob: 1.0})
                 cv2.imshow('Image',t)
                 cv2.waitKey(1)
-                print pred
+                print(pred)
 
 optimize(num_iterations=80)
