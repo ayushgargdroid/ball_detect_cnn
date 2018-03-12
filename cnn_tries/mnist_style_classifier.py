@@ -162,62 +162,62 @@ saver = tf.train.Saver()
 def optimize(num_iterations):
     start_time = time.time()
     with tf.Session() as session:
-        saver.restore(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/mnist_style_classifier.ckpt")
-        print('Restored')
-        # session.run(tf.global_variables_initializer())
-        # for epoch in range(num_iterations):
-        #     acc_tot = 0
-        #     acc_test = 0
-        #     for i in range(batches):
-        #         (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
-        #         # t = np.zeros([minibatch_size,480,480,3])
-        #         # for j in range(minibatch_size):
-        #         #     t[j] = cv2.resize(miniX[j],(480,480))
-        #         # print(t.shape)
-        #         # miniX = t
-        #         session.run(optimizer, feed_dict={x: miniX, y_true: miniY,keep_prob: 0.5})
-        #         del miniX,miniY
+        # saver.restore(session, "mnist_style_classifier.ckpt")
+        # print('Restored')
+        session.run(tf.global_variables_initializer())
+        for epoch in range(num_iterations):
+            acc_tot = 0
+            acc_test = 0
+            for i in range(batches):
+                (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
+                # t = np.zeros([minibatch_size,480,480,3])
+                # for j in range(minibatch_size):
+                #     t[j] = cv2.resize(miniX[j],(480,480))
+                # print(t.shape)
+                # miniX = t
+                session.run(optimizer, feed_dict={x: miniX, y_true: miniY,keep_prob: 0.5})
+                del miniX,miniY
 
-        #     for i in range(batches):
-        #         (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
-        #         # t = np.zeros([minibatch_size,480,480,3])
-        #         # for j in range(minibatch_size):
-        #         #     t[j] = cv2.resize(miniX[j],(480,480))
-        #         # miniX = t
-        #         acc = session.run(accuracy, feed_dict={x: miniX, y_true: miniY,keep_prob: 1.0})
-        #         del miniX,miniY
-        #         acc_tot += acc
+            for i in range(batches):
+                (miniX,miniY) = x_train[i*minibatch_size:(i+1)*minibatch_size],y_train[i*minibatch_size:(i+1)*minibatch_size]
+                # t = np.zeros([minibatch_size,480,480,3])
+                # for j in range(minibatch_size):
+                #     t[j] = cv2.resize(miniX[j],(480,480))
+                # miniX = t
+                acc = session.run(accuracy, feed_dict={x: miniX, y_true: miniY,keep_prob: 1.0})
+                del miniX,miniY
+                acc_tot += acc
 
-        #     for i in range(x_test.shape[0]/minibatch_size):
-        #         (miniX,miniY) = x_test[i*minibatch_size:(i+1)*minibatch_size],y_test[i*minibatch_size:(i+1)*minibatch_size]
-        #         # t = np.zeros([minibatch_size,480,480,3])
-        #         # for j in range(minibatch_size):
-        #         #     t[j] = cv2.resize(miniX[j],(480,480))
-        #         # miniX = t
-        #         acc = session.run(accuracy, feed_dict={x: miniX, y_true: miniY,keep_prob: 1.0})
-        #         del miniX,miniY
-        #         acc_test += acc
-        #     acc_tot /= batches
-        #     acc_test /= (x_test.shape[0]/minibatch_size)
-        #     msg = "Optimization Iteration: {0:>6}, Training Accuracy: {1:>6.4%}, Test Accuracy: {2:>6.4%}"
-        #     print(msg.format(epoch+1, acc_tot,acc_test))
+            for i in range(x_test.shape[0]/minibatch_size):
+                (miniX,miniY) = x_test[i*minibatch_size:(i+1)*minibatch_size],y_test[i*minibatch_size:(i+1)*minibatch_size]
+                # t = np.zeros([minibatch_size,480,480,3])
+                # for j in range(minibatch_size):
+                #     t[j] = cv2.resize(miniX[j],(480,480))
+                # miniX = t
+                acc = session.run(accuracy, feed_dict={x: miniX, y_true: miniY,keep_prob: 1.0})
+                del miniX,miniY
+                acc_test += acc
+            acc_tot /= batches
+            acc_test /= (x_test.shape[0]/minibatch_size)
+            msg = "Optimization Iteration: {0:>6}, Training Accuracy: {1:>6.4%}, Test Accuracy: {2:>6.4%}"
+            print(msg.format(epoch+1, acc_tot,acc_test))
 
-        # save_path = saver.save(session, "/home/mrmai/Ayush/ball_detect_cnn/cnn_tries/mnist_style_classifier.ckpt")
-        # print("Model saved in file: %s" % save_path)
-        # end_time = time.time()
-        # time_dif = end_time - start_time
-        # print("Time usage: " + str(timedelta(seconds=int(round(time_dif)))))
-        cap = cv2.VideoCapture(0)
-        while True:
-            _, frame = cap.read()
-            if _:
-                frame = cv2.resize(frame,(200,200))
-                # tt = frame.copy()
-                t = frame.copy()
-                frame.shape = (1,200,200,3)
-                pred = session.run(y_pred_cls,feed_dict={x:frame,keep_prob: 1.0})
-                cv2.imshow('Image',t)
-                cv2.waitKey(1)
-                print(pred)
+        save_path = saver.save(session, "mnist_style_classifier.ckpt")
+        print("Model saved in file: %s" % save_path)
+        end_time = time.time()
+        time_dif = end_time - start_time
+        print("Time usage: " + str(timedelta(seconds=int(round(time_dif)))))
+        # cap = cv2.VideoCapture(0)
+        # while True:
+        #     _, frame = cap.read()
+        #     if _:
+        #         frame = cv2.resize(frame,(200,200))
+        #         # tt = frame.copy()
+        #         t = frame.copy()
+        #         frame.shape = (1,200,200,3)
+        #         pred = session.run(y_pred_cls,feed_dict={x:frame,keep_prob: 1.0})
+        #         cv2.imshow('Image',t)
+        #         cv2.waitKey(1)
+        #         print(pred)
 
 optimize(num_iterations=80)
