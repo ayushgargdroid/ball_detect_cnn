@@ -188,7 +188,7 @@ def optimize(num_iterations):
                 del miniX,miniY
                 acc_tot += acc
 
-            for i in range(x_test.shape[0]/minibatch_size):
+            for i in range(int(x_test.shape[0]/minibatch_size)):
                 (miniX,miniY) = x_test[i*minibatch_size:(i+1)*minibatch_size],y_test[i*minibatch_size:(i+1)*minibatch_size]
                 # t = np.zeros([minibatch_size,480,480,3])
                 # for j in range(minibatch_size):
@@ -198,7 +198,7 @@ def optimize(num_iterations):
                 del miniX,miniY
                 acc_test += acc
             acc_tot /= batches
-            acc_test /= (x_test.shape[0]/minibatch_size)
+            acc_test /= int(x_test.shape[0]/minibatch_size)
             msg = "Optimization Iteration: {0:>6}, Training Accuracy: {1:>6.4%}, Test Accuracy: {2:>6.4%}"
             print(msg.format(epoch+1, acc_tot,acc_test))
 
